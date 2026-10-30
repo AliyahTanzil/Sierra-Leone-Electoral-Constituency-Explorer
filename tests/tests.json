@@ -1,0 +1,48 @@
+[
+  {
+    "name": "Area map directory",
+    "viewport": "desktop",
+    "covers": [
+      "district selector",
+      "embedded map search",
+      "pending geospatial status"
+    ],
+    "description": "Check the area locator opens the selected Sierra Leone district map without implying boundary precision.",
+    "steps": [
+      "Open directory",
+      "Select Bo in the area map selector",
+      "Review map and status labels"
+    ],
+    "expected": "The map searches the selected district and clearly states that boundaries and polling-centre pins are pending."
+  },
+  {
+    "name": "Constituency map pending state",
+    "viewport": "mobile",
+    "covers": [
+      "constituency map locator",
+      "unverified boundary warning"
+    ],
+    "description": "Check constituency detail map is only an area locator.",
+    "steps": [
+      "Open a constituency detail",
+      "Review geography section"
+    ],
+    "expected": "Named district area map is available; no constituency polygon or centre pin is fabricated."
+  },
+  {
+    "name": "Pending import milestone",
+    "viewport": "desktop",
+    "covers": [
+      "polling-centre import pending",
+      "validation pending",
+      "cross-reference pending",
+      "RF deferred"
+    ],
+    "description": "Ensure pending work is clearly visible.",
+    "steps": [
+      "Open constituency detail",
+      "Review record status"
+    ],
+    "expected": "Historical centre import, validation, matching and geolocation are pending; RF design deferred."
+  }
+]
