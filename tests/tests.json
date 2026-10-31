@@ -1,48 +1,70 @@
 [
   {
-    "name": "Area map directory",
+    "name": "Explore district and ADM3 boundary layers",
+    "sanity": true,
     "viewport": "desktop",
     "covers": [
-      "district selector",
-      "embedded map search",
-      "pending geospatial status"
+      "interactive Leaflet map",
+      "ADM2 district polygons",
+      "ADM3 local-area polygons",
+      "source attribution"
     ],
-    "description": "Check the area locator opens the selected Sierra Leone district map without implying boundary precision.",
+    "description": "Verifies the geographic explorer loads the sourced Sierra Leone administrative polygons and identifies dataset provenance.",
     "steps": [
-      "Open directory",
-      "Select Bo in the area map selector",
-      "Review map and status labels"
+      "Open the Geographic Explorer section",
+      "Wait for the district and ADM3 layers to load",
+      "Review layer controls and source attribution"
     ],
-    "expected": "The map searches the selected district and clearly states that boundaries and polling-centre pins are pending."
+    "expected": "The interactive map displays Sierra Leone district and ADM3 reference polygons, with layer toggles, source years and attribution visible."
   },
   {
-    "name": "Constituency map pending state",
+    "name": "Find and display Koya and East III",
+    "viewport": "desktop",
+    "covers": [
+      "Koya ADM3 feature inclusion",
+      "East III ADM3 feature inclusion",
+      "searchable geographic feature selection",
+      "preserved source geometry"
+    ],
+    "description": "Verifies Koya and East III are selectable geographic features and highlighted from the source ADM3 layer without geometry edits.",
+    "steps": [
+      "Search for Koya and select it under ADM3 areas",
+      "Confirm the Koya feature is highlighted",
+      "Search for East III and select it under ADM3 areas"
+    ],
+    "expected": "Koya and East III can both be selected and highlighted as ADM3 source features; their geometries are displayed unchanged."
+  },
+  {
+    "name": "Use the map on a mobile screen",
     "viewport": "mobile",
     "covers": [
-      "constituency map locator",
-      "unverified boundary warning"
+      "responsive map controls",
+      "mobile map interaction",
+      "constituency-boundary limitation notice"
     ],
-    "description": "Check constituency detail map is only an area locator.",
+    "description": "Verifies map controls and source limitations remain readable on a narrow viewport.",
     "steps": [
-      "Open a constituency detail",
-      "Review geography section"
+      "Open a constituency detail page on a mobile viewport",
+      "Use the map focus selector to choose East III",
+      "Review the geography note below the map"
     ],
-    "expected": "Named district area map is available; no constituency polygon or centre pin is fabricated."
+    "expected": "The map controls stack vertically, East III can be selected, and the page states that ADM3 reference geometry is not a constituency boundary."
   },
   {
-    "name": "Pending import milestone",
-    "viewport": "desktop",
+    "name": "Automatically focus the parent district when opening a constituency",
+    "viewport": "mobile",
     "covers": [
-      "polling-centre import pending",
-      "validation pending",
-      "cross-reference pending",
-      "RF deferred"
+      "constituency-to-parent-district map focus",
+      "automatic district bounds fitting",
+      "full-height focused map viewport",
+      "highlighted district with ADM3 context"
     ],
-    "description": "Ensure pending work is clearly visible.",
+    "description": "Verifies opening a constituency automatically frames its parent district in the enlarged map and preserves the administrative context without inventing constituency geometry.",
     "steps": [
-      "Open constituency detail",
-      "Review record status"
+      "Open a district dashboard and choose one of its constituency entries",
+      "Scroll to the geography section",
+      "Review the map extent, selected district highlight and ADM3 overlay"
     ],
-    "expected": "Historical centre import, validation, matching and geolocation are pending; RF design deferred."
+    "expected": "The map automatically zooms to fit the complete parent district within the enlarged map canvas, highlights the district, keeps ADM3 reference areas visible and labels the selected constituency without implying that a constituency boundary is available."
   }
 ]
