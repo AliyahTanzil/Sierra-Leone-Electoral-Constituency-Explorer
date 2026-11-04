@@ -20,9 +20,10 @@
     "wardPageTotal": 446,
     "constituencyPageDistrictWardTotal": 442,
     "uniqueWardRecords": 446,
-    "ward273Population": null,
+    "ward273Population": 9462,
     "ward030Conflict": true,
-    "completeConstituencyCrosswalkAvailable": false
+    "completeConstituencyCrosswalkAvailable": false,
+    "populationParseCorrection": "Ward 273 description uses the source wording 'population is 9,462'; population value normalized to 9462 without changing the description."
   },
   "districtComparison": [
     {
