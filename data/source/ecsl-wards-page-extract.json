@@ -3027,7 +3027,7 @@
       "legacyWardNumber": 273,
       "district": "Bo",
       "description": "This Ward consists of part of Eastward Manjama Shellmingo (EA 3-14) and part of Westward Lewabu- Manjama (EA 1, 2 & 10). It has a population is 9,462.",
-      "population": null,
+      "population": 9462,
       "constituencyId": null,
       "assignmentStatus": "not provided by source",
       "source": "Electoral Commission for Sierra Leone (ECSL), Boundary Delimitation Wards",
