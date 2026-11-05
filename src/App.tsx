@@ -20,6 +20,10 @@ import {
   LockKeyhole,
   ScanText,
 } from 'lucide-react';
+import { AlertCircle, CalendarDays, ChartNoAxesColumn, CheckCircle2, ClipboardList, CloudUpload, FileImage, FileSignature, Lightbulb, LoaderCircle, UsersRound } from 'lucide-react';
+import AdministrativeMap from './components/AdministrativeMap';
+import RrfPollingMap from './components/RrfPollingMap';
+import { wardAudit, wardRegister, wardSourceRecords } from './data/wardRegistry';
 
 const OFFICIAL = '';
 const REGIONS_URL = '';
@@ -30,6 +34,14 @@ const districtSeed = [
     count: 10,
     wards: 29,
     voters: 165753,
+  },
+  {
+    name: 'Kpanguima',
+    region: 'Eastern Region',
+    count: 0,
+    wards: 0,
+    voters: 0,
+    dataStatus: 'Gazetted under the 16 September 2026 Extraordinary Gazette · legal and operational implementation review noted · district boundary schedule and ECSL electoral crosswalk pending',
   },
   {
     name: 'Kenema',
@@ -123,6 +135,14 @@ const districtSeed = [
     voters: 101251,
   },
   {
+    name: 'Bandajuma',
+    region: 'Southern Region',
+    count: 0,
+    wards: 0,
+    voters: 0,
+    dataStatus: 'Gazetted under the 16 September 2026 Extraordinary Gazette · legal and operational implementation review noted · district boundary schedule and ECSL electoral crosswalk pending',
+  },
+  {
     name: 'Western Area Rural',
     region: 'Western Rural',
     count: 8,
@@ -179,13 +199,16 @@ function App() {
   const [districtDashboard, setDistrictDashboard] = useState(null);
   const [selectedFromDistrict, setSelectedFromDistrict] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-  const [mapDistrict, setMapDistrict] = useState('Western Area Urban');
   const [referenceStatus, setReferenceStatus] = useState(null);
   const [captureOpen, setCaptureOpen] = useState(false);
+  const [wardDataOpen, setWardDataOpen] = useState(false);
+  const [wardSearch, setWardSearch] = useState('');
+  const [wardDistrictFilter, setWardDistrictFilter] = useState('All source districts');
   const [captureUser, setCaptureUser] = useState(null);
   const [captureBusy, setCaptureBusy] = useState(false);
   const [captureError, setCaptureError] = useState('');
   const [captureResult, setCaptureResult] = useState(null);
+  const [captureLocation, setCaptureLocation] = useState(null);
   const [captureMeta, setCaptureMeta] = useState({ electionType: 'Parliamentary', position: 'Member of Parliament', round: '', district: '', constituency: '', ward: '', electionDate: '' });
   useEffect(() => { api.get('/api/electoral/reference').then(result => setReferenceStatus(result.data)).catch(() => setReferenceStatus(null)); auth.getUser().then(setCaptureUser).catch(() => setCaptureUser(null)); }, []);
   useEffect(() => {
@@ -226,6 +249,27 @@ function App() {
     ? districts.find(d => d.name === selected.district)
     : null;
   const formatVoters = n => number(n);
+  const positionOptions = captureMeta.electionType === 'Presidential'
+    ? ['President', 'Vice President', 'Other / not specified']
+    : captureMeta.electionType === 'Parliamentary'
+      ? ['Member of Parliament', 'Other / not specified']
+      : captureMeta.electionType === 'Local Council'
+        ? ['Mayor / Chairperson', 'Councillor', 'Other / not specified']
+        : captureMeta.electionType === 'Ward'
+          ? ['Ward Councillor', 'Other / not specified']
+          : ['President', 'Member of Parliament', 'Mayor / Chairperson', 'Councillor', 'Ward Councillor', 'Other / not specified'];
+  const selectedCaptureDistrict = districts.find(d => d.name === captureMeta.district);
+  const captureConstituencies = selectedCaptureDistrict
+    ? constituencies.filter(c => c.district === selectedCaptureDistrict.name)
+    : [];
+  const captureWards = captureMeta.constituency
+    ? wardRegister.numberedWards.filter(ward => ward.constituencyId === captureMeta.constituency)
+    : [];
+  const filteredWardRecords = wardSourceRecords.filter(record => {
+    const q = wardSearch.trim().toLowerCase();
+    return (wardDistrictFilter === 'All source districts' || record.district === wardDistrictFilter) &&
+      (!q || record.legacyWardNumber.includes(q) || record.district.toLowerCase().includes(q) || record.description.toLowerCase().includes(q));
+  });
   return (
     <div className="app-shell">
       <header className="topbar">
@@ -251,16 +295,146 @@ function App() {
         <div className="top-links">
           <span className="independent"><span /> Independent civic tool</span>
           <span className="independent">App-managed electoral records</span>
-          <button className="capture-nav-button" onClick={()=>{setCaptureOpen(true);setSelected(null);setDistrictDashboard(null);}}> <ScanText size={16}/> RRF Capture</button>
+          <button className="capture-nav-button" onClick={()=>{setWardDataOpen(true);setCaptureOpen(false);setSelected(null);setDistrictDashboard(null);}}> <ClipboardList size={16}/> Ward Register</button>
+          <button className="capture-nav-button" onClick={()=>{setCaptureOpen(true);setWardDataOpen(false);setSelected(null);setDistrictDashboard(null);}}> <ScanText size={16}/> RRF Capture</button>
         </div>
       </header>
       <main>
         {captureOpen ? (
           <section className="rrf-page">
-            <button className="back-link" onClick={() => { setCaptureOpen(false); setCaptureResult(null); }}><ArrowLeft size={17}/> Back to Explorer</button>
-            <div className="rrf-hero"><div className="detail-label">PRIMARY ELECTION EVIDENCE INTAKE</div><h1>Results & Reconciliation Form Capture</h1><p>Photograph or upload an RRF. OCR extracts the information while preserving the captured image as the source evidence.</p><span><LockKeyhole size={15}/> Secure sign-in · private account records · human review required</span></div>
-            {!captureUser ? <div className="rrf-panel"><LockKeyhole size={25}/><h2>Sign in to capture election evidence</h2><p>Uploads are restricted to authenticated accounts and stored in a private account partition.</p><button className="primary-action" onClick={async()=>{try{await auth.signInWithRedirect();}catch(e){setCaptureError(e.message||'Sign-in failed.');}}}>Sign in securely</button>{captureError&&<p className="rrf-error">{captureError}</p>}</div> : <div className="rrf-layout"><section className="rrf-panel"><h2>1. Document details</h2><div className="rrf-meta-grid"><label>Election type<select value={captureMeta.electionType} onChange={e=>setCaptureMeta({...captureMeta,electionType:e.target.value})}><option>Presidential</option><option>Parliamentary</option><option>Local Council</option><option>Ward</option><option>By-election</option><option>Party / internal election</option><option>Other / unknown</option></select></label><label>Position contested<input value={captureMeta.position} onChange={e=>setCaptureMeta({...captureMeta,position:e.target.value})}/></label><label>Election round<input value={captureMeta.round} onChange={e=>setCaptureMeta({...captureMeta,round:e.target.value})} placeholder="General, runoff, rerun…"/></label><label>District<input value={captureMeta.district} onChange={e=>setCaptureMeta({...captureMeta,district:e.target.value})}/></label><label>Constituency<input value={captureMeta.constituency} onChange={e=>setCaptureMeta({...captureMeta,constituency:e.target.value})}/></label><label>Ward<input value={captureMeta.ward} onChange={e=>setCaptureMeta({...captureMeta,ward:e.target.value})}/></label><label>Election date<input type="date" value={captureMeta.electionDate} onChange={e=>setCaptureMeta({...captureMeta,electionDate:e.target.value})}/></label></div><label className="rrf-upload-zone"><input type="file" accept="image/*" capture="environment" onChange={async e=>{const file=e.target.files?.[0];if(!file)return;if(!file.type.startsWith('image/')){setCaptureError('Upload an image file (JPG, PNG or WebP).');return;}if(file.size>15*1024*1024){setCaptureError('Maximum source image size is 15 MB.');return;}setCaptureBusy(true);setCaptureError('');try{const prepared=await image.resizeIfNeeded(file,{maxDimension:1600,maxPixels:2000000,quality:0.86,mimeType:'image/jpeg'});const response=await api.post('/api/rrf/capture',{fileName:file.name,mimeType:prepared.mimeType,imageBase64:prepared.data,metadata:captureMeta});setCaptureResult(response.data.record);}catch(err){setCaptureError(err?.message||'Capture failed.');}finally{setCaptureBusy(false);e.target.value='';}}}/><Upload size={27}/><b>{captureBusy?'Uploading and extracting…':'Tap to photograph or upload an RRF image'}</b><small>JPG, PNG or WebP · use a clear, full-page image</small></label>{captureError&&<p className="rrf-error">{captureError}</p>}</section><section className="rrf-panel"><h2>2. Universal extraction fields</h2><ul className="rrf-list"><li>Election, office/position, round, form title, serial number and date</li><li>District, constituency, ward, polling centre and centre code</li><li>Candidate names, party names/IDs, contacts and votes obtained</li><li>Valid votes, invalid votes, total votes and other printed totals</li><li>Agents/observers, party IDs, contact details and signatures</li><li>Presiding officer, stamps, handwritten notes, checkboxes and additional fields</li></ul><p className="rrf-note">Different form layouts are supported. Unknown or unreadable values must remain blank/uncertain rather than being guessed.</p></section></div>}
-            {captureResult&&<section className="rrf-panel"><h2>Extraction result · pending human review</h2><p>Submission ID: {captureResult.id}</p><p>Status: <b>{captureResult.status}</b></p><pre className="rrf-result-json">{JSON.stringify(captureResult.extractedData,null,2)}</pre><p className="rrf-note">The source image is retained separately. OCR output is not verified election data. Corrections and reviewer approval are the next workflow stage.</p></section>}
+            <button className="rrf-back-link" onClick={() => { setCaptureOpen(false); setCaptureResult(null); }}><ArrowLeft size={17}/> Back to Explorer</button>
+            <header className="rrf-header">
+              <div className="rrf-header-copy">
+                <div className="rrf-eyebrow"><span className="rrf-live-dot" /> ELECTION EVIDENCE WORKSPACE</div>
+                <h1>RRF Capture <span>&amp; Reconciliation</span></h1>
+                <p>Capture a Results and Reconciliation Form, extract its printed information, and preserve the original image for careful human review.</p>
+                <div className="rrf-trust-row"><span><LockKeyhole size={15}/> Private account records</span><span><ShieldCheck size={15}/> Source image retained</span><span><CheckCircle2 size={15}/> Human review required</span></div>
+              </div>
+              <div className="rrf-header-mark"><ScanText size={34}/><span>RRF</span><small>EVIDENCE INTAKE</small></div>
+            </header>
+            <div className="rrf-steps" aria-label="Capture workflow">
+              <div className="rrf-step is-active"><span>01</span><div><b>Form details</b><small>Identify the election</small></div></div>
+              <div className="rrf-step-line" />
+              <div className="rrf-step"><span>02</span><div><b>Capture document</b><small>Upload a clear image</small></div></div>
+              <div className="rrf-step-line" />
+              <div className="rrf-step"><span>03</span><div><b>Review extraction</b><small>Check before use</small></div></div>
+            </div>
+            {!captureUser ? (
+              <div className="rrf-signin-card">
+                <div className="rrf-signin-icon"><LockKeyhole size={27}/></div>
+                <div><div className="rrf-card-kicker">SECURE WORKSPACE</div><h2>Sign in to capture election evidence</h2><p>Access is restricted to authenticated accounts. Uploaded records are stored in a private account partition.</p>{captureError&&<p className="rrf-error">{captureError}</p>}<button className="rrf-primary-button" onClick={async()=>{try{await auth.signInWithRedirect();}catch(e){setCaptureError(e.message||'Sign-in failed.');}}}>Sign in securely <ArrowUpRight size={16}/></button></div>
+              </div>
+            ) : (
+              <div className="rrf-workspace">
+                <div className="rrf-main-column">
+                  <section className="rrf-card rrf-details-card">
+                    <div className="rrf-card-heading">
+                      <div className="rrf-heading-icon"><ClipboardList size={21}/></div>
+                      <div><div className="rrf-card-kicker">STEP 01 · IDENTIFICATION</div><h2>Document details</h2><p>Enter the context printed on, or associated with, this form.</p></div>
+                      <span className="rrf-required-note">* Required where known</span>
+                    </div>
+                    <div className="rrf-form-section-title"><span>01</span><div><b>Election information</b><small>Set the election and position being recorded.</small></div></div>
+                    <div className="rrf-form-grid">
+                      <label className="rrf-field"><span>Election type <i>*</i></span><select value={captureMeta.electionType} onChange={e=>setCaptureMeta({...captureMeta,electionType:e.target.value,position:''})}><option value="">Select election type</option><option>Presidential</option><option>Parliamentary</option><option>Local Council</option><option>Ward</option><option>By-election</option><option>Party / internal election</option><option>Other / unknown</option></select></label>
+                      <label className="rrf-field"><span>Position contested</span><select value={captureMeta.position} onChange={e=>setCaptureMeta({...captureMeta,position:e.target.value})}><option value="">Select position</option>{positionOptions.map(option=><option key={option} value={option}>{option}</option>)}</select></label>
+                      <label className="rrf-field"><span>Election round</span><select value={captureMeta.round} onChange={e=>setCaptureMeta({...captureMeta,round:e.target.value})}><option value="">Select election round</option><option>General election</option><option>First round</option><option>Runoff</option><option>By-election</option><option>Rerun</option><option>Supplementary election</option><option>Other / not specified</option></select></label>
+                      <label className="rrf-field"><span>Election date</span><input type="date" value={captureMeta.electionDate} onChange={e=>setCaptureMeta({...captureMeta,electionDate:e.target.value})}/></label>
+                    </div>
+                    <div className="rrf-form-section-title rrf-location-title"><span>02</span><div><b>Geographic reference</b><small>Use the location stated on the document. Leave unknown details blank.</small></div></div>
+                    <div className="rrf-form-grid rrf-location-grid">
+                      <label className="rrf-field"><span>District</span><select value={captureMeta.district} onChange={e=>setCaptureMeta({...captureMeta,district:e.target.value,constituency:'',ward:''})}><option value="">Select district</option>{districts.map(item=><option key={item.name} value={item.name}>{item.name}</option>)}</select></label>
+                      <label className="rrf-field"><span>Constituency</span><select value={captureMeta.constituency} onChange={e=>setCaptureMeta({...captureMeta,constituency:e.target.value,ward:''})} disabled={!captureMeta.district}><option value="">{captureMeta.district?'Select constituency':'Select district first'}</option>{captureConstituencies.map(item=><option key={item.id} value={item.id}>Constituency {item.id} · sequence placeholder</option>)}</select>{captureMeta.district&&<small className="rrf-field-hint">Official sequence numbers only; verified constituency names are not yet available.</small>}</label>
+                      <label className="rrf-field"><span>Ward</span><select value={captureMeta.ward} onChange={e=>setCaptureMeta({...captureMeta,ward:e.target.value})} disabled={!captureMeta.constituency || !wardRegister.complete}><option value="">{!captureMeta.district?'Select district first':!captureMeta.constituency?'Select constituency first':!wardRegister.complete?'Ward register pending validation':'Select ward'}</option>{captureWards.map(item=><option key={item.legacyWardNumber} value={item.newWardNumber || ''}>Ward {item.newWardNumber} · ECSL ref {item.legacyWardNumber}</option>)}</select><small className="rrf-field-hint">{wardRegister.complete?'New constituency-ordered ward numbers are available.':'Sequential ward numbering is locked until all 446 ECSL wards have verified constituency assignments.'}</small></label>
+                    </div>
+                  </section>
+                  <section className="rrf-card rrf-upload-card">
+                    <div className="rrf-card-heading">
+                      <div className="rrf-heading-icon rrf-blue-icon"><Upload size={21}/></div>
+                      <div><div className="rrf-card-kicker">STEP 02 · SOURCE DOCUMENT</div><h2>Upload your RRF</h2><p>Photograph the full page or choose an existing image.</p></div>
+                    </div>
+                    <label className="rrf-dropzone">
+                      <input type="file" accept="image/*" capture="environment" onChange={async e=>{const file=e.target.files?.[0];if(!file)return;if(!file.type.startsWith('image/')){setCaptureError('Upload an image file (JPG, PNG or WebP).');return;}if(file.size>15*1024*1024){setCaptureError('Maximum source image size is 15 MB.');return;}setCaptureBusy(true);setCaptureError('');setCaptureLocation(null);try{if(!navigator.geolocation)throw new Error('This device or browser does not support GPS location. Enable location services or use a supported mobile browser.');const gps=await new Promise((resolve,reject)=>navigator.geolocation.getCurrentPosition(position=>resolve(position),()=>reject(new Error('GPS permission or location fix unavailable. Enable precise location and try taking the RRF photo again.')), {enableHighAccuracy:true,timeout:25000,maximumAge:0}));const location={latitude:gps.coords.latitude,longitude:gps.coords.longitude,accuracyMeters:gps.coords.accuracy,capturedAt:new Date(gps.timestamp||Date.now()).toISOString(),method:'browser_geolocation'};setCaptureLocation(location);const prepared=await image.resizeIfNeeded(file,{maxDimension:1600,maxPixels:2000000,quality:0.86,mimeType:'image/jpeg'});const response=await api.post('/api/rrf/capture',{fileName:file.name,mimeType:prepared.mimeType,imageBase64:prepared.data,metadata:captureMeta,location});setCaptureResult(response.data.record);}catch(err){setCaptureError(err?.message||'Capture failed.');}finally{setCaptureBusy(false);e.target.value='';}}}/>
+                      <span className="rrf-upload-icon">{captureBusy?<LoaderCircle size={29} className="rrf-spinning"/>:<CloudUpload size={29}/>}</span>
+                      <b>{captureBusy?'Uploading and extracting…':'Choose a file or take a photo'}</b>
+                      <span className="rrf-dropzone-description">Photograph the completed RRF at the polling centre. GPS will be captured before upload.</span>
+                      <span className="rrf-file-types"><FileImage size={14}/> JPG <i/> PNG <i/> WebP <i/> Maximum 15 MB</span>
+                      <span className="rrf-upload-action">{captureBusy?'PLEASE WAIT':'SELECT RRF IMAGE'} <ArrowUpRight size={15}/></span>
+                    </label>
+                    {captureLocation&&<div className="rrf-gps-confirmation"><MapPin size={17}/><span>GPS captured: {captureLocation.latitude.toFixed(6)}, {captureLocation.longitude.toFixed(6)} · accuracy ±{Math.round(captureLocation.accuracyMeters)} m</span></div>}
+                    {captureError&&<div className="rrf-error-banner"><AlertCircle size={17}/><span>{captureError}</span></div>}
+                    <div className="rrf-image-tip"><Lightbulb size={17}/><p><b>For the best extraction</b> Keep the whole page inside the frame, use even lighting, avoid shadows, and make sure small figures are readable.</p></div>
+                  </section>
+                </div>
+                <aside className="rrf-side-column">
+                  <section className="rrf-card rrf-extraction-card">
+                    <div className="rrf-card-kicker">WHAT WE LOOK FOR</div><h2>Universal extraction</h2><p className="rrf-side-intro">The capture process looks for common election fields while accommodating different RRF layouts.</p>
+                    <ul className="rrf-extraction-list">
+                      <li><span><CalendarDays size={16}/></span><div><b>Election identifiers</b><small>Form title, serial number, election, round and date</small></div></li>
+                      <li><span><MapPin size={16}/></span><div><b>Location details</b><small>District, constituency, ward, polling centre and centre code</small></div></li>
+                      <li><span><UsersRound size={16}/></span><div><b>Candidate results</b><small>Candidate and party names or IDs, plus votes obtained</small></div></li>
+                      <li><span><ChartNoAxesColumn size={16}/></span><div><b>Vote totals</b><small>Valid, invalid and total votes, and other printed totals</small></div></li>
+                      <li><span><FileSignature size={16}/></span><div><b>Signatures and notes</b><small>Agents, observers, presiding officer, stamps and handwriting</small></div></li>
+                    </ul>
+                  </section>
+                  <section className="rrf-assurance-card"><div className="rrf-assurance-icon"><ShieldCheck size={22}/></div><div><b>Evidence integrity comes first</b><p>The original image is preserved separately. OCR output is a draft—not verified election data. Unreadable or uncertain values must be checked by a person, never guessed.</p></div></section>
+                  <div className="rrf-privacy-note"><LockKeyhole size={16}/><span><b>Private by design</b><small>Capture requires sign-in. Records remain associated with the authenticated account.</small></span></div>
+                </aside>
+              </div>
+            )}
+            {captureUser&&<section className="rrf-card rrf-map-card"><div className="rrf-card-heading"><div className="rrf-heading-icon"><MapPin size={21}/></div><div><div className="rrf-card-kicker">FIELD LOCATION DATA</div><h2>Polling-centre GPS map</h2><p>RRF capture locations collected at polling centres. Unverified points are not official centre coordinates.</p></div></div><RrfPollingMap refreshKey={captureResult?.id||''}/></section>}
+            {captureResult&&<section className="rrf-card rrf-result-card"><div className="rrf-result-heading"><div className="rrf-heading-icon"><CheckCircle2 size={21}/></div><div><div className="rrf-card-kicker">STEP 03 · REVIEW</div><h2>Extraction result</h2><p>Pending human review · do not treat as verified election data</p></div><span className="rrf-status-pill">{captureResult.status}</span></div><div className="rrf-result-meta"><span>Submission ID</span><code>{captureResult.id}</code></div><pre className="rrf-result-json">{JSON.stringify(captureResult.extractedData,null,2)}</pre><p className="rrf-result-disclaimer"><ShieldCheck size={16}/> The source image is retained separately. Corrections and reviewer approval are the next workflow stage.</p></section>}
+          </section>
+        ) : wardDataOpen ? (
+          <section className="ward-registry-page">
+            <button className="back-link" onClick={() => { setWardDataOpen(false); setWardSearch(''); setWardDistrictFilter('All source districts'); }}><ArrowLeft size={17}/> Back to Explorer</button>
+            <header className="ward-registry-hero">
+              <div className="detail-label">SOURCE DATA WORKSPACE · ECSL</div>
+              <h1>National Ward Source Register</h1>
+              <p>Published ECSL legacy ward identifiers and descriptions, imported as source records. These records are not yet assigned to constituencies or renumbered.</p>
+              <div className="ward-registry-source-link"><a href="https://ec.gov.sl/wards/" target="_blank" rel="noreferrer">Open ECSL ward source <ExternalLink size={14}/></a><span>Retrieved 4 November 2026 · 446 source entries</span></div>
+            </header>
+            <div className="ward-registry-stats">
+              <article><span>Source ward records</span><strong>{wardSourceRecords.length}</strong><small>Unique legacy IDs 001–446</small></article>
+              <article><span>Constituency assignments</span><strong>0 / 446</strong><small>Not provided by the source page</small></article>
+              <article><span>Unresolved records</span><strong>{wardRegister.unresolvedCount}</strong><small>All remain pending review</small></article>
+              <article><span>District summary conflict</span><strong>{wardAudit.metadata.wardPageTotal} vs {wardAudit.metadata.constituencyPageDistrictWardTotal}</strong><small>Ward page vs constituency page totals</small></article>
+            </div>
+            <div className="dataset-audit-note">
+              <div className="dataset-audit-heading"><ShieldCheck size={17}/><b>Data integrity status · source imported, crosswalk pending</b></div>
+              <p>The app now contains the 446 ECSL ward descriptions as published source records. The ECSL wards page groups them into 446 records, while the ECSL constituencies page district summary totals 442. This discrepancy is preserved for review. No constituency assignment or new ward number has been inferred.</p>
+              <div className="dataset-audit-tags"><span>446 source rows loaded</span><span>0 constituency assignments verified</span><span>Sequential numbering locked</span><span>RRF ward selector locked</span></div>
+            </div>
+            <section className="ward-findings-section">
+              <div className="profile-section-title"><div><span>RECONCILIATION AUDIT</span><h2>Issues requiring official clarification</h2></div><span className="data-status status-review">{wardAudit.findings.length} findings</span></div>
+              <div className="ward-findings-grid">{wardAudit.findings.map(finding => (
+                <article key={finding.id}>
+                  <div className="ward-finding-top"><span>{finding.id}</span><b>{finding.severity.toUpperCase()}</b></div>
+                  <p>{finding.description}</p>
+                  <small>{finding.action}</small>
+                </article>
+              ))}</div>
+            </section>
+            <section className="ward-source-list-section">
+              <div className="profile-section-title"><div><span>446 SOURCE RECORDS</span><h2>Browse ward descriptions</h2></div><span className="data-status status-source">{filteredWardRecords.length} shown</span></div>
+              <div className="ward-registry-controls">
+                <label><span>Search ward number, district or description</span><input value={wardSearch} onChange={e=>setWardSearch(e.target.value)} placeholder="e.g. 030, Kenema, Kandu..." /></label>
+                <label><span>Published district heading</span><select value={wardDistrictFilter} onChange={e=>setWardDistrictFilter(e.target.value)}><option>All source districts</option>{Array.from(new Set(wardSourceRecords.map(record=>record.district))).sort().map(name=><option key={name}>{name}</option>)}</select></label>
+              </div>
+              <div className="ward-source-list">
+                {filteredWardRecords.map(record => (
+                  <article key={record.legacyWardNumber}>
+                    <div className="ward-source-record-heading"><b>Ward {record.legacyWardNumber}</b><span>{record.district}</span><small>{record.population === null ? 'Population not parsed' : 'Population ' + record.population.toLocaleString('en-US')}</small></div>
+                    <p>{record.description}</p>
+                    <div className="ward-source-record-footer"><span>Constituency: pending · New number: not issued</span>{record.legacyWardNumber === '030' && <b className="ward-review-flag">District heading conflict · review</b>}{record.legacyWardNumber === '273' && <b className="ward-review-flag">Population needs source review</b>}<a href={record.sourceReference} target="_blank" rel="noreferrer">ECSL source <ExternalLink size={12}/></a></div>
+                  </article>
+                ))}
+                {filteredWardRecords.length === 0 && <div className="polling-empty"><h3>No matching ward records</h3><p>Change the search term or source district filter.</p></div>}
+              </div>
+            </section>
+            <section className="ward-source-citations">
+              <b>Source documents</b>
+              {wardAudit.metadata.sources.map(source => <a key={source.url} href={source.url} target="_blank" rel="noreferrer">{source.title} <ExternalLink size={13}/></a>)}
+            </section>
           </section>
         ) : districtDashboard ? (
           <section className="district-dashboard-page">
@@ -269,25 +443,35 @@ function App() {
               <div className="detail-icon"><Landmark size={27}/></div>
               <div className="detail-label">DISTRICT DASHBOARD · {districtDashboard.region.toUpperCase()}</div>
               <h1>{districtDashboard.name} District</h1>
-              <p>District-level electoral workspace. Constituency, ward and polling-centre records are shown here as they become available and verified.</p>
+              <p>District-level administrative workspace. Constituency, ward, voter and polling-centre records are shown here as they become available and verified.</p>
+              {districtDashboard.dataStatus && <p className="district-workspace-intro">{districtDashboard.dataStatus}. No constituency or ward numbers have been fabricated.</p>}
             </div>
             <div className="district-dashboard-stats">
-              <article><span>Directory constituency entries</span><strong>{districtDashboard.count}</strong><small>Sequence entries only · names and boundaries pending</small></article>
-              <article><span>Ward count reference</span><strong>{districtDashboard.wards}</strong><small>Ward records and boundaries pending import</small></article>
-              <article><span>Historical district voter figure</span><strong>{number(districtDashboard.voters)}</strong><small>District-level historical reference, not current registration</small></article>
+              <article><span>Directory constituency entries</span><strong>{districtDashboard.count || "Pending"}</strong><small>{districtDashboard.count ? "Legacy sequence only · post-2026 district allocation unverified" : "Official constituency delimitation and crosswalk pending"}</small></article>
+              <article><span>Ward count reference</span><strong>{districtDashboard.wards || "Pending"}</strong><small>{districtDashboard.wards ? "Ward records and boundaries pending import" : "Verified ward register for this new district not yet available"}</small></article>
+              <article><span>Historical district voter figure</span><strong>{districtDashboard.voters ? number(districtDashboard.voters) : "Pending"}</strong><small>{districtDashboard.voters ? "District-level historical reference, not current registration" : "Do not infer a voter total from the former parent districts"}</small></article>
               <article><span>Polling centres imported</span><strong>0</strong><small>Historical register import pending</small></article>
             </div>
             <section className="district-workspace-section">
-              <div className="profile-section-title"><div><span>01 / DISTRICT GEOGRAPHY</span><h2>District area map</h2></div><span className="data-status status-review">Area locator only</span></div>
-              <div className="area-map-card"><div className="area-map-heading"><div><b>{districtDashboard.name}, Sierra Leone</b><small>Place-name map search · not an official boundary</small></div><a href={'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(districtDashboard.name + ', Sierra Leone')} target="_blank" rel="noreferrer">Open full map <ArrowUpRight size={14}/></a></div><iframe title={districtDashboard.name + ' district map'} src={'https://maps.google.com/maps?q=' + encodeURIComponent(districtDashboard.name + ', Sierra Leone') + '&output=embed'} loading="lazy" referrerPolicy="no-referrer-when-downgrade"/><p>Area locator only. Verified district boundaries, ward polygons, constituency boundaries and polling-centre coordinates have not yet been imported.</p></div>
+              <div className="profile-section-title"><div><span>01 / DISTRICT GEOGRAPHY</span><h2>District area map</h2></div><span className="data-status status-review">{districtDashboard.count ? "Focused district view" : "Boundary pending"}</span></div>
+              <AdministrativeMap initialFeatureName={districtDashboard.name} initialLevel="ADM2" focusMode contextLabel={`${districtDashboard.name} District`} />
             </section>
             <section className="district-workspace-section">
               <div className="profile-section-title"><div><span>02 / CONSTITUENCY DIRECTORY</span><h2>Constituencies in {districtDashboard.name}</h2></div><span className="data-status status-review">{districtDashboard.count} sequence entries</span></div>
-              <p className="district-workspace-intro">These are directory sequence numbers grouped under this district. They are not verified local constituency names or boundary assignments.</p>
+              <p className="district-workspace-intro">These are legacy directory sequence entries based on the earlier 132-constituency reference. They are not proof of post-2026 district allocation, verified local constituency names or boundary assignments. The two newly gazetted districts have no constituency entries until ECSL publishes or confirms the electoral crosswalk.</p>
               <div className="district-dashboard-const-grid">{constituencies.filter(c => c.district === districtDashboard.name).map(c => <button key={c.id} type="button" onClick={() => { setSelectedFromDistrict(true); setSelected(c); setDistrictDashboard(null); }}><span className="number-chip">#{c.id}</span><b>Constituency {c.id}</b><small>View constituency information <ArrowUpRight size={13}/></small></button>)}</div>
             </section>
+            <section className="district-workspace-section">
+              <div className="profile-section-title"><div><span>03 / CONSTITUENCY-ORDERED WARDS</span><h2>Ward numbering register</h2></div><span className="data-status status-review">{wardRegister.complete ? 'Numbering ready' : 'Crosswalk pending'}</span></div>
+              <p className="district-workspace-intro">Original ECSL ward numbers are retained as source identifiers. New numbers are assigned in constituency order only after the complete national ward crosswalk has passed validation.</p>
+              <div className="district-dashboard-sections">
+                <article><span>WARD SOURCE RECORDS</span><h3>{wardRegister.numberedWards.filter(ward => ward.district === districtDashboard.name).length}</h3><b>{wardRegister.complete ? 'Imported and validated' : 'Awaiting source import'}</b><p>Ward descriptions and original ECSL identifiers are preserved.</p></article>
+                <article><span>CONSTITUENCY ASSIGNMENTS</span><h3>{wardRegister.unresolvedCount}</h3><b>Unresolved national assignments</b><p>Area-majority matches remain provisional; overlaps and close matches require review.</p></article>
+                <article><span>NEW SEQUENTIAL NUMBERS</span><h3>{wardRegister.complete ? '001–446' : 'Not issued'}</h3><b>{wardRegister.complete ? 'Available' : 'Locked for integrity'}</b><p>Partial numbering is not exposed as a completed register.</p></article>
+              </div>
+              {!wardRegister.complete && <div className="dataset-audit-note"><div className="dataset-audit-heading"><ShieldCheck size={17}/><b>446 ECSL source records imported · constituency cross-reference pending</b></div><p>This district dashboard now reads the original ECSL ward descriptions under their published district headings. The source grouping is not a verified post-2026 electoral crosswalk. Review the Ward Register for the full source descriptions and documented discrepancies. No ward has been assigned or renumbered by guesswork.</p><button className="profile-inline-action" onClick={() => { setWardDataOpen(true); setDistrictDashboard(null); }}>Open full ward source register <ArrowUpRight size={15}/></button></div>}
+            </section>
             <div className="district-dashboard-sections">
-              <article><span>03 / WARDS</span><h3>Ward directory</h3><b>Import pending</b><p>Ward names, identifiers and geographic boundaries will be added after source validation.</p></article>
               <article><span>04 / POLLING CENTRES</span><h3>Polling-centre register</h3><b>Import pending</b><p>Historical polling-centre records, duplicate checks and district reconciliation are pending.</p></article>
               <article><span>05 / DATA CROSS-REFERENCE</span><h3>Constituency matching</h3><b>Validation pending</b><p>Centre-to-constituency assignments will not be inferred without a reliable cross-reference.</p></article>
             </div>
@@ -347,19 +531,15 @@ function App() {
               <div className="profile-section-title"><div><span>01 / ELECTORAL SNAPSHOT</span><h2>Election statistics</h2></div><span className="data-status status-unavailable">Unavailable</span></div>
               <div className="profile-stat-grid">
                 <article><span>Registered voters in this constituency</span><strong>Not verified</strong><small>Constituency-specific voter records have not yet been imported and validated.</small></article>
-                <article><span>Wards in this constituency</span><strong>Not available</strong><small>A verified ward-to-constituency cross-reference is pending.</small></article>
+                <article><span>Wards in this constituency</span><strong>{wardRegister.numberedWards.filter(ward => ward.constituencyId === selected.id).length || 'Not available'}</strong><small>{wardRegister.complete ? 'New constituency-ordered ward numbers' : 'Verified ward-to-constituency cross-reference pending.'}</small></article>
                 <article><span>Polling centres / turnout</span><strong>Not available</strong><small>Centre assignments and election-specific results are pending validation.</small></article>
               </div>
               <div className="phase2-data-note"><ShieldCheck size={16}/><p><b>Constituency data scope:</b> this dashboard is reserved for constituency-specific information. District voter figures are intentionally excluded to prevent them being mistaken for constituency totals.</p></div>
             </section>
             <section className="profile-data-section map-ready-section">
-              <div className="profile-section-title"><div><span>02 / GEOGRAPHY</span><h2>Explore the area on a map</h2></div><span className="data-status status-review">Area locator · not boundary map</span></div>
-              <div className="area-map-card">
-                <div className="area-map-heading"><div><b>{selected.district}, Sierra Leone</b><small>Place-name map search · approximate area locator</small></div><a href={'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(selected.district + ', Sierra Leone')} target="_blank" rel="noreferrer">Open map <ArrowUpRight size={14}/></a></div>
-                <iframe title={'Map search for ' + selected.district} src={'https://maps.google.com/maps?q=' + encodeURIComponent(selected.district + ', Sierra Leone') + '&output=embed'} loading="lazy" referrerPolicy="no-referrer-when-downgrade" />
-                <p>Map search locates the named district area. It does not represent an official district or constituency boundary, polling-centre pin, or verified coordinate.</p>
-              </div>
-              <div className="map-placeholder"><div className="map-placeholder-icon"><MapPin size={27}/></div><h3>Constituency boundary layer pending</h3><p>Official boundary geometry and verified polling-centre coordinates have not yet been imported. No constituency polygon or centre pin is displayed until validated.</p><span className="map-placeholder-caption">Geospatial data status: pending verification.</span></div>
+              <div className="profile-section-title"><div><span>02 / GEOGRAPHY</span><h2>{selected.district} District · Constituency {selected.id}</h2></div><span className="data-status status-review">Focused district view</span></div>
+              <AdministrativeMap initialFeatureName={selected.district} initialLevel="ADM2" focusMode contextLabel={`Constituency ${selected.id} · ${selected.district} District`} />
+              <div className="phase2-data-note"><ShieldCheck size={16}/><p><b>Electoral geography:</b> District and ADM3 reference polygons are available for exploration. Constituency-specific boundaries and verified polling-centre coordinates have not yet been imported.</p></div>
             </section>
             <section className="profile-data-section polling-section">
               <div className="profile-section-title"><div><span>03 / VOTER GUIDANCE</span><h2>Polling information</h2></div><span className="data-status status-unavailable">Import pending</span></div>
@@ -526,13 +706,13 @@ function App() {
             </section>
             <section className="directory">
               <section className="profile-data-section area-map-directory">
-                <div className="profile-section-title"><div><span>GEOGRAPHIC EXPLORER</span><h2>Explore Sierra Leone by area</h2></div><span className="data-status status-review">Area locator</span></div>
-                <div className="area-map-controls"><label htmlFor="area-map-select">Select district / area</label><select id="area-map-select" value={mapDistrict} onChange={e => setMapDistrict(e.target.value)}>{districts.map(d => <option key={d.name} value={d.name}>{d.name} · {d.region}</option>)}</select><a href={'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(mapDistrict + ', Sierra Leone')} target="_blank" rel="noreferrer">Open full map <ArrowUpRight size={14}/></a></div>
-                <div className="area-map-card"><iframe title={'Map search for ' + mapDistrict} src={'https://maps.google.com/maps?q=' + encodeURIComponent(mapDistrict + ', Sierra Leone') + '&output=embed'} loading="lazy" referrerPolicy="no-referrer-when-downgrade"/><p>Area-level place search only. District/constituency boundaries, wards and polling-centre pins require verified GIS data. Map coverage is not an official boundary dataset.</p></div>
-                <div className="map-data-status-grid"><div><b>16</b><span>District / area locators</span></div><div><b>0</b><span>Verified constituency coordinates</span></div><div><b>0</b><span>Verified polling-centre pins</span></div><div><b>Pending</b><span>Boundary geometry import</span></div></div>
+                <div className="profile-section-title"><div><span>GEOGRAPHIC EXPLORER</span><h2>Explore Sierra Leone by area</h2></div><span className="data-status status-review">Interactive boundary map</span></div>
+                <AdministrativeMap />
+
+                <div className="dataset-audit-note"><div className="dataset-audit-heading"><ShieldCheck size={17}/><b>2026 administrative change · source and implementation status</b></div><p>The Extraordinary Sierra Leone Gazette, Vol. CLXVII No. 77, dated 16 September 2026, lists the Bandajuma District Establishment Order (S.I. No. 7) and Kpanguima District Establishment Order (S.I. No. 18). Public reporting also records a Lawyers’ Society challenge concerning the wider instruments and required parliamentary/consultation procedures. This directory records the gazetted names; it does not certify that operational implementation or electoral boundary reconciliation is complete. Gazette text and official boundary schedules must be obtained and reviewed before GIS polygons or electoral assignments are approved.</p><div className="dataset-audit-tags"><span>Gazette: 16 Sep 2026</span><span>Legal review: required</span><span>Electoral crosswalk: pending</span></div></div><div className="map-data-status-grid"><div><b>18</b><span>Gazetted district names represented in the directory</span></div><div><b>14</b><span>ADM2 reference polygons in the legacy GIS source</span></div><div><b>Bandajuma + Kpanguima</b><span>Gazetted district entries; precise boundaries pending authoritative schedule</span></div><div><b>Not sourced</b><span>Official post-2026 constituency / polling-centre geometry</span></div></div>
               </section>
               <div className="section-heading">
-                <div><div className="eyebrow muted">THE DISTRICT DIRECTORY</div><h2>Choose a district</h2><p>Open a district dashboard to explore its constituency directory, map and data coverage.</p></div>
+                <div><div className="eyebrow muted">THE DISTRICT DIRECTORY</div><h2>Choose a district</h2><p>Open a district dashboard to explore its constituency directory, map and data coverage. Constituency and ward figures on the legacy districts remain pre-redistricting references until ECSL confirms the revised electoral crosswalk.</p></div>
                 <div className="result-count"><b>{activeDistricts.filter(d => !query.trim() || d.name.toLowerCase().includes(query.trim().toLowerCase()) || d.region.toLowerCase().includes(query.trim().toLowerCase())).length}</b><span>districts</span></div>
               </div>
               <div className="search-row">
@@ -609,8 +789,8 @@ function App() {
                       </div>
                       <h3>{d.name}</h3>
                       <div className="district-metrics">
-                        <div><strong>{d.count}</strong><span>constituencies</span></div>
-                        <div><strong>{d.wards}</strong><span>wards listed</span></div>
+                        <div><strong>{d.count || "Pending"}</strong><span>constituencies</span></div>
+                        <div><strong>{d.wards || "Pending"}</strong><span>wards listed</span></div>
                       </div>
                       <div className="district-panel-footer"><span>Open district dashboard</span><span className="district-open-mark"><ArrowUpRight size={17}/></span></div>
                     </article>

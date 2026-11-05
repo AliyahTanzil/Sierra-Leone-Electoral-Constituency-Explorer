@@ -1,0 +1,23 @@
+.admin-map-panel{margin:16px 0 22px;overflow:hidden;border:1px solid var(--line,#e1e8ef);border-radius:16px;background:#fff;box-shadow:0 8px 24px rgba(16,46,76,.05)}
+.admin-map-toolbar{display:grid;grid-template-columns:minmax(180px,.8fr) minmax(240px,1.2fr);gap:12px;padding:16px 18px 12px}
+.admin-map-search,.admin-map-select{display:grid;gap:6px}
+.admin-map-search label,.admin-map-select label{color:#50677b;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase}
+.admin-map-search input,.admin-map-select select{width:100%;min-height:42px;border:1px solid #dce5eb;border-radius:9px;padding:9px 11px;color:#17334b;background:#fbfdfe}
+.admin-map-layer-controls{display:flex;flex-wrap:wrap;align-items:center;gap:14px;padding:0 18px 13px;color:#52697c;font-size:12px}
+.admin-map-layer-controls label{display:inline-flex;align-items:center;gap:6px;font-weight:700}
+.admin-map-layer-controls input{accent-color:#168c84}
+.admin-map-layer-controls button,.admin-map-error button{border:0;border-radius:7px;padding:7px 10px;color:#126f69;background:#e9f6f3;font-size:12px;font-weight:800}
+.admin-map-canvas-wrap{position:relative;background:#eaf0f2}
+.admin-map-canvas{width:100%;height:500px;z-index:0}.admin-map-panel--focus .admin-map-canvas{height:clamp(480px,72vh,780px)}
+.admin-map-message,.admin-map-error{position:absolute;z-index:500;top:14px;left:50%;transform:translateX(-50%);display:grid;gap:5px;width:min(90%,360px);padding:12px 15px;border:1px solid #dce5eb;border-radius:10px;background:rgba(255,255,255,.96);color:#31516a;box-shadow:0 5px 18px rgba(16,46,76,.12);text-align:center;font-size:12px}
+.admin-map-error{top:50%;transform:translate(-50%,-50%);justify-items:center}
+.admin-map-error span{color:#6a7d8c}
+.admin-map-footer{display:flex;justify-content:space-between;gap:16px;padding:14px 18px 8px}
+.admin-map-footer>div:first-child{display:grid;gap:3px}
+.admin-map-footer b{color:#17334b;font-size:13px}
+.admin-map-footer span{color:#718096;font-size:11px}
+.admin-map-counts{display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+.admin-map-counts span{display:grid;gap:2px;text-align:right}
+.admin-map-counts span b{font-size:16px}
+.admin-map-attribution{margin:0;padding:7px 18px 15px;color:#718096;font-size:10px;line-height:1.5}
+@media(max-width:650px){.admin-map-toolbar{grid-template-columns:1fr}.admin-map-canvas{height:360px}.admin-map-panel--focus .admin-map-canvas{height:clamp(420px,64vh,620px)}.admin-map-footer{flex-direction:column}.admin-map-counts span{text-align:left}}

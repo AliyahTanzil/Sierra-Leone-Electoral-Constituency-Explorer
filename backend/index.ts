@@ -59,8 +59,12 @@ export const handler = router({
   'GET /api/_healthcheck': [async () => json({ message: 'Success' })],
   'POST /api/rrf/capture': [requireAuth(), async ({ body, user }) => {
     try {
-      const input = body as { fileName?: string; mimeType?: string; imageBase64?: string; metadata?: Record<string, unknown> };
+      const input = body as { fileName?: string; mimeType?: string; imageBase64?: string; metadata?: Record<string, unknown>; location?: { latitude?: number; longitude?: number; accuracyMeters?: number; capturedAt?: string; method?: string } };
       if (!input.imageBase64 || !['image/jpeg','image/png','image/webp'].includes(input.mimeType || '')) return error('Supported image required',400);
+      const latitude = Number(input.location?.latitude);
+      const longitude = Number(input.location?.longitude);
+      const accuracyMeters = Number(input.location?.accuracyMeters);
+      if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90 || !Number.isFinite(longitude) || longitude < -180 || longitude > 180 || !Number.isFinite(accuracyMeters) || accuracyMeters < 0) return error('A valid GPS fix is required before submitting an RRF image',400);
       if (input.imageBase64.length > 7500000) return error('Image payload too large',413);
       const safeUser=user!.userId.replace(/[^a-zA-Z0-9]/g,'');
       const id='rrf_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,9);
@@ -74,12 +78,18 @@ export const handler = router({
         extractedData=ocr.data||{rawTranscription:ocr.text}; rawOcrText=ocr.text||''; extractionStatus='ocr_completed_pending_human_review';
       } catch(ocrErr){console.error('RRF OCR failed; source preserved',ocrErr);}
       const table=`rrf_submissions_${safeUser}`;
-      const record={ownerUserId:user!.userId,imagePath,originalFileName:input.fileName||'form-image',mimeType:input.mimeType,metadata:input.metadata||{},extractedData,rawOcrText,extractionStatus,status:'pending_review',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),verification:{verified:false,verifiedBy:null,verifiedAt:null},audit:[{action:'source_uploaded',actorUserId:user!.userId,at:new Date().toISOString()},{action:'ocr_attempted',actorUserId:'system',at:new Date().toISOString(),result:extractionStatus}]};
+      const capturedAt = input.location?.capturedAt && !Number.isNaN(Date.parse(input.location.capturedAt)) ? input.location.capturedAt : new Date().toISOString();
+      const location = { latitude, longitude, accuracyMeters, capturedAt, method: input.location?.method || 'browser_geolocation', locationType: 'polling_centre_capture', verificationStatus: accuracyMeters <= 100 ? 'pending_human_verification' : 'low_accuracy_review_required' };
+      const record={ownerUserId:user!.userId,imagePath,originalFileName:input.fileName||'form-image',mimeType:input.mimeType,metadata:input.metadata||{},location,extractedData,rawOcrText,extractionStatus,status:'pending_review',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),verification:{verified:false,verifiedBy:null,verifiedAt:null},audit:[{action:'source_uploaded',actorUserId:user!.userId,at:new Date().toISOString()},{action:'gps_location_captured',actorUserId:user!.userId,at:capturedAt,latitude,longitude,accuracyMeters},{action:'ocr_attempted',actorUserId:'system',at:new Date().toISOString(),result:extractionStatus}]};
       const [savedId]=await db.add(table,[{id,...record}]); if(!savedId)return error('Image stored but database record creation failed',500);
-      return json({record:{id:savedId,...record}},201);
+      const election = (extractedData as any)?.election || {};
+      const [locationId] = await db.add('rrf_polling_locations',[{submissionId:savedId,ownerUserId:user!.userId,latitude,longitude,accuracyMeters,capturedAt,locationType:'polling_centre_capture',verificationStatus:location.verificationStatus,pollingCentre:election.pollingCentre||null,pollingCentreCode:election.pollingCentreCode||null,district:election.district||input.metadata?.district||null,constituency:election.constituency||input.metadata?.constituency||null,ward:election.ward||input.metadata?.ward||null,createdAt:new Date().toISOString()}]);
+      if(!locationId) return error('RRF saved, but map location indexing failed. Contact an administrator before retrying the form.',500);
+      return json({record:{id:savedId,...record},locationIndexed:true},201);
     }catch(err){console.error('RRF capture error',err);return error('Unable to process RRF capture',500);}
   }],
   'GET /api/rrf': [requireAuth(), async ({ user }) => { try { const table=`rrf_submissions_${user!.userId.replace(/[^a-zA-Z0-9]/g,'')}`; const page=await db.list(table,{limit:50}); return json({items:page.items.map(({imagePath,rawOcrText,...item})=>item)}); } catch(err){console.error('RRF list error',err);return error('Unable to list submissions',500);} }],
+  'GET /api/rrf/map': [requireAuth(), async ({user}) => { try { const page = await db.list('rrf_polling_locations', { limit: 100 }); const isSupervisor = (user!.scope || '').split(/\\s+/).includes('rrf:supervisor'); const items = isSupervisor ? page.items : page.items.filter(item => item.ownerUserId === user!.userId); return json({ items, visibility: isSupervisor ? 'supervisor_all_agents' : 'agent_own_submissions', hasMore: Boolean(page.nextToken) }); } catch(err) { console.error('RRF map locations error',err); return error('Unable to load polling-centre map locations',500); } }],
   'GET /api/rrf/:id/image': [requireAuth(), async ({params,user})=>{try{const table=`rrf_submissions_${user!.userId.replace(/[^a-zA-Z0-9]/g,'')}`;const [record]=await db.get<{imagePath:string}>(table,[params.id],{consistent:true});if(!record?.imagePath)return error('Source image not found',404);const [signed]=await storage.url([record.imagePath]);return signed?.url?json({url:signed.url}):error('Source image unavailable',404);}catch(err){console.error('RRF image access error',err);return error('Unable to retrieve source image',500);}}],
   'GET /api/electoral/reference': [async () => {
     try {

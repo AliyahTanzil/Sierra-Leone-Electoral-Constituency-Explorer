@@ -1,49 +1,56 @@
 # Salone Constituency Explorer
 
-Independent, source-attributed electoral reference for Sierra Leone. The intended interface is district-first: choose a district, open its dashboard, then inspect constituency details.
+A mobile-friendly, source-attributed electoral and geographic reference for Sierra Leone. The application uses a district-first navigation model: explore administrative areas, open district dashboards, and inspect constituency records.
 
-> **Data integrity:** This repository began empty. This initial commit establishes project documentation; it does not yet contain the live AppDeploy application's source code. Do not describe placeholders, historical figures, geocoding results, or unverified boundaries as current official facts.
+## Current application
 
-## Status
-- [x] Repository structure and engineering documentation
-- [ ] Port the deployed AppDeploy source into this repository
-- [ ] Add verified datasets and source metadata
-- [ ] Configure automated tests and CI
-- [ ] Configure preview and production deployment
+The working React/Vite application and AppDeploy backend have been ported from the live AppDeploy snapshot into this repository.
 
-## Intended structure
-```text
-src/
-  app/             # app entry, routes, providers
-  components/      # reusable UI grouped by domain
-  layouts/         # shared page shells
-  pages/           # district directory, district dashboard, constituency details
-  features/        # electoral-domain rules and state
-  services/        # API client and integrations
-  hooks/ types/    # reusable hooks and TypeScript contracts
-  data/            # explicitly labelled fixtures only
-  styles/          # tokens, global and component styles
-backend/           # API routes, services, persistence
-public/assets/     # static images, icons, fonts
-tests/             # unit, integration, end-to-end tests
-docs/              # architecture, development, testing, deployment, provenance
+- Interactive Leaflet administrative map with ADM2 and ADM3 reference layers.
+- District and constituency navigation with parent-district map focus.
+- GPS-enabled RRF image capture and polling-location map pins.
+- Agent-scoped RRF visibility and supervisor visibility when the `rrf:supervisor` authorization scope is assigned.
+- Responsive UI using the established navy, teal, white and soft-grey design system.
+
+## Important data and verification notes
+
+- Administrative map layers are reference geography, not official constituency boundaries.
+- Koya and East III are retained as valid source features.
+- RRF map pins represent GPS capture points. They are not official polling-centre coordinates until independently verified.
+- Gallery-selected images are geotagged at upload time by the browser; embedded EXIF GPS is not currently extracted.
+- GPS accuracy flags and OCR-derived polling-centre labels are review aids, not proof of polling-centre identity.
+- Supervisor-wide map visibility requires the authenticated user to have the `rrf:supervisor` scope.
+- The RRF map API currently returns a maximum of 100 points per request. Pagination and a full supervisor verification workflow remain future work.
+- The backend stores a private RRF record before writing its shared map index; transactional consistency/idempotent retry should be strengthened.
+
+## Source provenance
+
+Administrative boundary reference data is sourced from geoBoundaries:
+- ADM2: geoBoundaries, Sierra Leone, 2017 reference year, CC BY 3.0 IGO; source: Government of Sierra Leone / OCHA ROWCA.
+- ADM3: geoBoundaries, Sierra Leone, 2016 reference year, CC BY 4.0; source: openAFRICA / geoBoundaries.
+
+The map UI displays source attribution and warns users not to interpret administrative overlays as electoral boundaries. See [Data provenance](docs/DATA_PROVENANCE.md).
+
+## Development
+
+The application was deployed and validated in the AppDeploy runtime. The current source imports platform-provided `@appdeploy/client` and `@appdeploy/sdk` modules. A standalone local build requires those platform SDKs or a documented replacement adapter; do not assume a plain npm install reproduces the hosted runtime.
+
+Typical Vite commands:
+```bash
+npm install
+npm run dev
+npm run build
 ```
 
-## Core navigation
-1. Landing page displays districts/administrative areas, not all constituencies.
-2. Selecting a district opens its own dashboard.
-3. Selecting a constituency opens its detail view with a route back to the parent district.
-4. Source and verification status accompany figures, map layers, and polling-centre records.
+The manifest contains the application dependencies captured from the deployed project. Verify platform SDK availability and add/lock any missing public dependencies before treating a standalone build as reproducible.
 
-## Setup
-Use the Node.js LTS version supported by the eventual application and install dependencies with the repository lockfile once the actual application source and manifest have been ported. This scaffold intentionally does not guess dependency versions or claim tests have passed.
+## Repository layout
 
-## Documentation
-- [Architecture](docs/ARCHITECTURE.md)
-- [Development](docs/DEVELOPMENT.md)
-- [Testing](docs/TESTING.md)
-- [Deployment](docs/DEPLOYMENT.md)
-- [Data provenance](docs/DATA_PROVENANCE.md)
-- [Contributing](docs/CONTRIBUTING.md)
+- `src/` — React application, maps, styles and entry point
+- `backend/` — AppDeploy API handlers, RRF capture, OCR and map index
+- `tests/tests.json` — AppDeploy acceptance scenarios
+- `docs/` — architecture, development, testing, deployment and provenance guidance
 
-Primary reference: [Electoral Commission for Sierra Leone constituency directory](https://ec.gov.sl/constituencies/).
+## Primary electoral reference
+
+[Electoral Commission for Sierra Leone — Constituencies](https://ec.gov.sl/constituencies/)

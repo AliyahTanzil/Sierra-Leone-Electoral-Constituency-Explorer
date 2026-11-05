@@ -1,0 +1,264 @@
+{
+  "metadata": {
+    "title": "ECSL ward-to-constituency reconciliation audit",
+    "preparedAt": "2026-11-04",
+    "status": "source comparison completed; full constituency assignment not approved",
+    "sources": [
+      {
+        "title": "ECSL Boundary Delimitation Wards",
+        "url": "https://ec.gov.sl/wards/"
+      },
+      {
+        "title": "ECSL Constituencies",
+        "url": "https://ec.gov.sl/constituencies/"
+      },
+      {
+        "title": "Constituency Boundary Delimitation Report, Volume 2 (August 2017)",
+        "url": "https://ec.gov.sl/wp-content/uploads/2022/09/BD-Constituency-Description-and-Maps.pdf"
+      }
+    ],
+    "wardPageTotal": 446,
+    "constituencyPageDistrictWardTotal": 442,
+    "uniqueWardRecords": 446,
+    "ward273Population": 9462,
+    "ward030Conflict": true,
+    "completeConstituencyCrosswalkAvailable": false,
+    "populationParseCorrection": "Ward 273 description uses the source wording 'population is 9,462'; population value normalized to 9462 without changing the description."
+  },
+  "districtComparison": [
+    {
+      "district": "Kailahun",
+      "wardPageTableCount": 30,
+      "constituenciesPageWardCount": 29,
+      "difference": 1
+    },
+    {
+      "district": "Kenema",
+      "wardPageTableCount": 42,
+      "constituenciesPageWardCount": 22,
+      "difference": 20
+    },
+    {
+      "district": "Kono",
+      "wardPageTableCount": 27,
+      "constituenciesPageWardCount": 27,
+      "difference": 0
+    },
+    {
+      "district": "Bombali",
+      "wardPageTableCount": 24,
+      "constituenciesPageWardCount": 28,
+      "difference": -4
+    },
+    {
+      "district": "Falaba",
+      "wardPageTableCount": 18,
+      "constituenciesPageWardCount": 21,
+      "difference": -3
+    },
+    {
+      "district": "Koinadugu",
+      "wardPageTableCount": 18,
+      "constituenciesPageWardCount": 21,
+      "difference": -3
+    },
+    {
+      "district": "Tonkolili",
+      "wardPageTableCount": 29,
+      "constituenciesPageWardCount": 31,
+      "difference": -2
+    },
+    {
+      "district": "Kambia",
+      "wardPageTableCount": 23,
+      "constituenciesPageWardCount": 28,
+      "difference": -5
+    },
+    {
+      "district": "Karene",
+      "wardPageTableCount": 21,
+      "constituenciesPageWardCount": 21,
+      "difference": 0
+    },
+    {
+      "district": "Port Loko",
+      "wardPageTableCount": 31,
+      "constituenciesPageWardCount": 31,
+      "difference": 0
+    },
+    {
+      "district": "Bo",
+      "wardPageTableCount": 42,
+      "constituenciesPageWardCount": 42,
+      "difference": 0
+    },
+    {
+      "district": "Bonthe",
+      "wardPageTableCount": 21,
+      "constituenciesPageWardCount": 21,
+      "difference": 0
+    },
+    {
+      "district": "Moyamba",
+      "wardPageTableCount": 22,
+      "constituenciesPageWardCount": 20,
+      "difference": 2
+    },
+    {
+      "district": "Pujehun",
+      "wardPageTableCount": 23,
+      "constituenciesPageWardCount": 11,
+      "difference": 12
+    },
+    {
+      "district": "Western Area Rural",
+      "wardPageTableCount": 27,
+      "constituenciesPageWardCount": 32,
+      "difference": -5
+    },
+    {
+      "district": "Western Area Urban",
+      "wardPageTableCount": 48,
+      "constituenciesPageWardCount": 57,
+      "difference": -9
+    }
+  ],
+  "findings": [
+    {
+      "id": "WARD-030-DISTRICT-HEADING",
+      "severity": "high",
+      "description": "Ward 030 is listed under Kailahun on the wards page but describes Kandu Lekpeiama Chiefdom; the 2017 report places Kandu Leppiama in Kenema Constituency 011 and gives the same population 18,229.",
+      "action": "Preserve source record; flag for ECSL confirmation; do not auto-reassign."
+    },
+    {
+      "id": "DISTRICT-WARD-TOTALS",
+      "severity": "high",
+      "description": "Wards page table groupings total 446; constituencies page district summary totals 442. District-level counts differ.",
+      "action": "Do not treat either page's district totals as a verified crosswalk until ECSL clarifies."
+    },
+    {
+      "id": "CROSSWALK-COVERAGE",
+      "severity": "high",
+      "description": "2017 report contains constituency component-part descriptions; extracted direct Ward No / Constituency tables are available for Western Urban wards 399–446, but a complete explicit 001–446 mapping was not found in the report text.",
+      "action": "Use section/chiefdom matches only as candidate assignments pending manual validation."
+    }
+  ],
+  "districtCounts": {
+    "wardPage": {
+      "Kailahun": 30,
+      "Kenema": 42,
+      "Kono": 27,
+      "Bombali": 24,
+      "Falaba": 18,
+      "Koinadugu": 18,
+      "Tonkolili": 29,
+      "Kambia": 23,
+      "Karene": 21,
+      "Port Loko": 31,
+      "Bo": 42,
+      "Bonthe": 21,
+      "Moyamba": 22,
+      "Pujehun": 23,
+      "Western Area Rural": 27,
+      "Western Area Urban": 48
+    },
+    "constituenciesPage": [
+      {
+        "district": "Kailahun",
+        "constituencies": 10,
+        "wards": 29,
+        "voters": 165753
+      },
+      {
+        "district": "Kenema",
+        "constituencies": 11,
+        "wards": 22,
+        "voters": 280142
+      },
+      {
+        "district": "Kono",
+        "constituencies": 9,
+        "wards": 27,
+        "voters": 186094
+      },
+      {
+        "district": "Bombali",
+        "constituencies": 8,
+        "wards": 28,
+        "voters": 187664
+      },
+      {
+        "district": "Falaba",
+        "constituencies": 4,
+        "wards": 21,
+        "voters": 65761
+      },
+      {
+        "district": "Koinadugu",
+        "constituencies": 4,
+        "wards": 21,
+        "voters": 84293
+      },
+      {
+        "district": "Tonkolili",
+        "constituencies": 10,
+        "wards": 31,
+        "voters": 204231
+      },
+      {
+        "district": "Kambia",
+        "constituencies": 6,
+        "wards": 28,
+        "voters": 155484
+      },
+      {
+        "district": "Karene",
+        "constituencies": 5,
+        "wards": 21,
+        "voters": 101160
+      },
+      {
+        "district": "Port Loko",
+        "constituencies": 10,
+        "wards": 31,
+        "voters": 233962
+      },
+      {
+        "district": "Bo",
+        "constituencies": 11,
+        "wards": 42,
+        "voters": 284347
+      },
+      {
+        "district": "Bonthe",
+        "constituencies": 4,
+        "wards": 21,
+        "voters": 92182
+      },
+      {
+        "district": "Moyamba",
+        "constituencies": 6,
+        "wards": 20,
+        "voters": 147041
+      },
+      {
+        "district": "Pujehun",
+        "constituencies": 6,
+        "wards": 11,
+        "voters": 101251
+      },
+      {
+        "district": "Western Area Rural",
+        "constituencies": 8,
+        "wards": 32,
+        "voters": 282355
+      },
+      {
+        "district": "Western Area Urban",
+        "constituencies": 20,
+        "wards": 57,
+        "voters": 606942
+      }
+    ]
+  }
+}
