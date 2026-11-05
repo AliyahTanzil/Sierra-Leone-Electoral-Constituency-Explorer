@@ -7,7 +7,10 @@
       "interactive Leaflet map",
       "ADM2 district polygons",
       "ADM3 local-area polygons",
-      "source attribution"
+      "source attribution",
+      "18-district Gazette status notice",
+      "legal and operational implementation caveat",
+      "legacy electoral crosswalk warning"
     ],
     "description": "Verifies the geographic explorer loads the sourced Sierra Leone administrative polygons and identifies dataset provenance.",
     "steps": [
@@ -15,7 +18,7 @@
       "Wait for the district and ADM3 layers to load",
       "Review layer controls and source attribution"
     ],
-    "expected": "The interactive map displays Sierra Leone district and ADM3 reference polygons, with layer toggles, source years and attribution visible."
+    "expected": "The interactive map displays the available legacy Sierra Leone district and ADM3 reference polygons, with layer toggles, source years and attribution visible; the directory separately identifies 18 gazetted district names and warns that post-2026 boundary and electoral crosswalk validation is pending."
   },
   {
     "name": "Find and display Koya and East III",
@@ -66,5 +69,31 @@
       "Review the map extent, selected district highlight and ADM3 overlay"
     ],
     "expected": "The map automatically zooms to fit the complete parent district within the enlarged map canvas, highlights the district, keeps ADM3 reference areas visible and labels the selected constituency without implying that a constituency boundary is available."
+  },
+  {
+    "name": "Keep RRF ward selection locked until constituency assignments are complete",
+    "viewport": "mobile",
+    "covers": [
+      "preservation of original ECSL ward identifiers",
+      "constituency-filtered RRF ward dropdown",
+      "sequential ward-number integrity guard",
+      "unverified ward assignment protection",
+      "446 ECSL source ward records",
+      "source descriptions and populations",
+      "district source-heading filter",
+      "ward 030 source anomaly warning",
+      "district ward totals discrepancy",
+      "constituency assignment pending state",
+      "RRF ward selector remains locked"
+    ],
+    "description": "Verifies the imported 446-record ECSL ward source register and reconciliation findings are visible while RRF ward selection and sequential numbering remain locked until verified constituency assignments exist.",
+    "steps": [
+      "Open the Ward Register from the top navigation",
+      "Filter the register to Kailahun and locate Ward 030",
+      "Review the Ward 030 warning, source description and 446-versus-442 district summary discrepancy",
+      "Open RRF Capture and select a district and constituency",
+      "Open the Ward selector"
+    ],
+    "expected": "The Ward Register shows 446 unique source records with descriptions and provenance, preserves Ward 030 under the published Kailahun heading with a review warning, explains the district summary discrepancy, and reports all constituency assignments pending. In RRF Capture, the Ward selector remains disabled and no synthetic or sequential ward values are offered."
   }
 ]
