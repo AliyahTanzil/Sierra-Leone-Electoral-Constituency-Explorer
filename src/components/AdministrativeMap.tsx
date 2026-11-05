@@ -45,6 +45,9 @@ export default function AdministrativeMap({ initialFeatureName, initialLevel = '
     if (!mapElement.current || mapRef.current) return;
     let cancelled = false;
     const map = L.map(mapElement.current, { zoomControl: true, scrollWheelZoom: false, preferCanvas: true });
+    // Initialize a valid view immediately so Leaflet interactions cannot run before
+    // fitBounds() receives real boundary geometry from the asynchronous data load.
+    map.setView([8.46, -11.78], 6);
     mapRef.current = map;
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 18,
@@ -198,3 +201,20 @@ export default function AdministrativeMap({ initialFeatureName, initialLevel = '
         </div>
       </div>
       <div className="admin-map-layer-controls">
+        <label><input type="checkbox" checked={showDistricts} onChange={event => setShowDistricts(event.target.checked)} /> District boundaries</label>
+        <label><input type="checkbox" checked={showLocalAreas} onChange={event => setShowLocalAreas(event.target.checked)} /> ADM3 areas</label>
+        <button type="button" onClick={() => setSelectedValue('ALL')}>Reset map view</button>
+      </div>
+      <div className="admin-map-canvas-wrap">
+        <div ref={mapElement} className="admin-map-canvas" />
+        {loading && <div className="admin-map-message">Loading Sierra Leone boundary layers…</div>}
+        {loadError && <div className="admin-map-error"><b>Map data unavailable</b><span>{loadError}</span><button type="button" onClick={() => { setLoadError(''); setLoading(true); setRetry(value => value + 1); }}>Try again</button></div>}
+      </div>
+      <div className="admin-map-footer">
+        <div><b>{contextLabel || (selectedValue === 'ALL' ? 'Sierra Leone · administrative overview' : selectedName)}</b><span>{focusMode ? 'Focused district extent · ADM3 reference areas remain visible. Constituency-specific boundary data is not yet available.' : selectedValue === 'ALL' ? 'Select or click a polygon to explore its geography.' : selectedLevel + ' reference geometry · source feature displayed unchanged.'}</span></div>
+        <div className="admin-map-counts"><span><b>{districtNames.length || '—'}</b> ADM2 districts</span><span><b>{localAreaNames.length || '—'}</b> ADM3 areas</span></div>
+      </div>
+      <p className="admin-map-attribution">Boundary sources: geoBoundaries. ADM2: Government of Sierra Leone / OCHA ROWCA, reference year 2017. ADM3: openAfrica / geoBoundaries, reference year 2016. Map tiles: © OpenStreetMap contributors. These are administrative reference layers, not constituency or polling-centre boundaries.</p>
+    </section>
+  );
+}
