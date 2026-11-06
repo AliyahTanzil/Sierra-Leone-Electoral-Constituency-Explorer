@@ -89,11 +89,14 @@
     "description": "Verifies the imported 446-record ECSL ward source register and reconciliation findings are visible while RRF ward selection and sequential numbering remain locked until verified constituency assignments exist.",
     "steps": [
       "Open the Ward Register from the top navigation",
+      "At the 375px mobile viewport, select Kenema from the district tiles and confirm the records list is filtered",
+      "Search for ward number 030 and review the source record and warning",
+      "Select Bandajuma and confirm no ward records are fabricated",
       "Filter the register to Kailahun and locate Ward 030",
       "Review the Ward 030 warning, source description and 446-versus-442 district summary discrepancy",
       "Open RRF Capture and select a district and constituency",
       "Open the Ward selector"
     ],
-    "expected": "The Ward Register shows 446 unique source records with descriptions and provenance, preserves Ward 030 under the published Kailahun heading with a review warning, explains the district summary discrepancy, and reports all constituency assignments pending. In RRF Capture, the Ward selector remains disabled and no synthetic or sequential ward values are offered."
+    "expected": "The Ward Register shows 446 unique source records with descriptions and provenance, preserves Ward 030 under the published Kailahun heading with a review warning, explains the district summary discrepancy, and reports all constituency assignments pending. In RRF Capture, the Ward selector remains disabled and no synthetic or sequential ward values are offered. The mobile layout keeps the district directory and search controls usable without horizontal overflow; selecting Kenema and searching 030 filters the records, while Bandajuma shows no assigned source wards."
   }
 ]
