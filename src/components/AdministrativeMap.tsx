@@ -7,15 +7,8 @@ type BoundaryProperties = { shapeName?: string; shapeID?: string; shapeType?: st
 type BoundaryCollection = GeoJSON.FeatureCollection<GeoJSON.Geometry, BoundaryProperties>;
 type Props = { initialFeatureName?: string; initialLevel?: 'ADM2' | 'ADM3'; focusMode?: boolean; contextLabel?: string };
 
-const ADM2_PATH = 'releaseData/gbOpen/SLE/ADM2/geoBoundaries-SLE-ADM2.geojson';
-const ADM3_PATH = 'releaseData/gbOpen/SLE/ADM3/geoBoundaries-SLE-ADM3.geojson';
-
-// Git LFS-backed GeoJSON must be requested through GitHub's /raw/ route.
- // raw.githubusercontent.com can return the small Git LFS pointer text instead of the file.
-const boundaryUrls = (path: string) => [
-  'https://github.com/wmgeolab/geoBoundaries/raw/9469f09/' + path,
-  'https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/9469f09/' + path,
-];
+const ADM2_URL = '/resources/geoBoundaries-SLE-ADM2_simplified.geojson';
+const ADM3_URL = '/resources/geoBoundaries-SLE-ADM3_simplified.geojson';
 
 const districtStyle: L.PathOptions = { color: '#315a78', weight: 1.8, opacity: 0.9, fillColor: '#8eb4c9', fillOpacity: 0.08 };
 const localAreaStyle: L.PathOptions = { color: '#168c84', weight: 1, opacity: 0.78, fillColor: '#63c5b6', fillOpacity: 0.08 };
@@ -54,46 +47,23 @@ export default function AdministrativeMap({ initialFeatureName, initialLevel = '
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(map);
 
-    const loadGeoJson = async (urls: string[], label: string): Promise<BoundaryCollection> => {
-      const failures: string[] = [];
-      for (const url of urls) {
-        try {
-          const response = await fetch(url, {
-            headers: { Accept: 'application/geo+json, application/json, */*' },
-            cache: 'force-cache',
-          });
-          const body = await response.text();
-          if (!response.ok) {
-            failures.push(new URL(url).hostname + ': HTTP ' + response.status);
-            continue;
-          }
-          let parsed: unknown;
-          try {
-            parsed = JSON.parse(body);
-          } catch {
-            const preview = body.replace(/\\s+/g, ' ').slice(0, 110);
-            const detail = body.includes('git-lfs.github.com/spec/v1')
-              ? 'Git LFS pointer returned instead of the GeoJSON payload'
-              : 'non-JSON response (' + preview + ')';
-            failures.push(new URL(url).hostname + ': ' + detail);
-            continue;
-          }
-          const collection = parsed as BoundaryCollection;
-          if (!collection || collection.type !== 'FeatureCollection' || !Array.isArray(collection.features)) {
-            failures.push(new URL(url).hostname + ': invalid GeoJSON FeatureCollection');
-            continue;
-          }
-          return collection;
-        } catch (error) {
-          failures.push(new URL(url).hostname + ': ' + (error instanceof Error ? error.message : 'network/CORS failure'));
-        }
+    const loadGeoJson = async (url: string, label: string): Promise<BoundaryCollection> => {
+      const response = await fetch(url, {
+        headers: { Accept: 'application/geo+json, application/json' },
+        cache: 'force-cache',
+      });
+      if (!response.ok) throw new Error(label + ' request failed: HTTP ' + response.status + ' (' + url + ').');
+      const parsed: unknown = await response.json();
+      const collection = parsed as BoundaryCollection;
+      if (!collection || collection.type !== 'FeatureCollection' || !Array.isArray(collection.features)) {
+        throw new Error(label + ' is not a valid GeoJSON FeatureCollection.');
       }
-      throw new Error(label + ' could not be loaded from any configured mirror. ' + failures.join(' | '));
+      return collection;
     };
 
     Promise.all([
-      loadGeoJson(boundaryUrls(ADM2_PATH), 'ADM2 district boundary'),
-      loadGeoJson(boundaryUrls(ADM3_PATH), 'ADM3 area boundary'),
+      loadGeoJson(ADM2_URL, 'ADM2 district boundary'),
+      loadGeoJson(ADM3_URL, 'ADM3 area boundary'),
     ]).then(([adm2, adm3]) => {
       if (cancelled) return;
       const getName = (feature: GeoJSON.Feature<GeoJSON.Geometry, BoundaryProperties>) => String(feature.properties?.shapeName || 'Unnamed area');
